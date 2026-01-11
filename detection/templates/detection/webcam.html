@@ -1,0 +1,15 @@
+<h2>🎥 Live Helmet Detection</h2>
+
+{% if message %}
+<p style="color:red">{{ message }}</p>
+{% endif %}
+
+<a href="{% url 'start_webcam' %}">
+    <button>▶ Start Webcam</button>
+</a>
+
+<a href="{% url 'stop_webcam' %}">
+    <button>⏹ Stop Webcam</button>
+</a>
+
+<img src="{% url 'webcam_feed' %}">

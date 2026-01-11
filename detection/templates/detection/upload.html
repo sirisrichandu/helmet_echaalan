@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Helmet Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: #fff;
+            padding: 30px;
+            width: 420px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🪖 Helmet Detection</h2>
+     
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label><strong>Upload Image or Video</strong></label><br><br>
+    <input type="file" name="media" accept="image/*,video/*" required>
+    <br><br>
+
+    <button type="submit">Detect</button>
+</form>
+
+
+</div>
+
+</body>
+</html>
