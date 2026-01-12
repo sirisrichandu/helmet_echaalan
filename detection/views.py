@@ -4,14 +4,13 @@ import cv2
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.http import StreamingHttpResponse
 
 from .models import Violation
 from .utils import detect_helmet_violation, detect_plates_and_ocr
+from vehicles.models import Vehicle
 
 
-# ===============================
-# DEFAULT LOCATION
-# ===============================
 DEFAULT_LOCATION = {
     "name": "Bhimavaram",
     "lat": 16.5449,
@@ -19,9 +18,6 @@ DEFAULT_LOCATION = {
 }
 
 
-# ===============================
-# UPLOAD VIEW
-# ===============================
 def upload_image(request):
     if request.method == "POST":
         image = request.FILES.get("media")
@@ -36,9 +32,6 @@ def upload_image(request):
     return render(request, "detection/upload.html")
 
 
-# ===============================
-# IMAGE HANDLER
-# ===============================
 def handle_image(request, image_file):
     temp_path = os.path.join(settings.MEDIA_ROOT, "temp_upload.jpg")
 
@@ -50,7 +43,7 @@ def handle_image(request, image_file):
     violation_detected = detect_helmet_violation(temp_path)
 
     # ===============================
-    # HELMET WORN → NO DB SAVE
+    # ✅ HELMET WORN → NO SAVE
     # ===============================
     if not violation_detected:
         return render(request, "detection/result.html", {
@@ -63,7 +56,7 @@ def handle_image(request, image_file):
         })
 
     # ===============================
-    # NO HELMET → SAVE VIOLATION
+    # ❌ NO HELMET → SAVE VIOLATION
     # ===============================
     violation = Violation.objects.create(
         helmet_detected=False,
@@ -77,7 +70,6 @@ def handle_image(request, image_file):
         ContentFile(open(temp_path, "rb").read())
     )
 
-    # ---- PLATE + OCR ----
     plates, _ = detect_plates_and_ocr(temp_path)
 
     vehicle_number = None
@@ -102,6 +94,13 @@ def handle_image(request, image_file):
         violation.vehicle_number = vehicle_number
         violation.confidence = confidence
 
+        # 🔗 Link vehicle owner if exists
+        try:
+            vehicle = Vehicle.objects.get(vehicle_number=vehicle_number)
+            violation.vehicle = vehicle
+        except Vehicle.DoesNotExist:
+            pass
+
     violation.save()
 
     return render(request, "detection/result.html", {
@@ -112,8 +111,9 @@ def handle_image(request, image_file):
         "confidence": confidence,
         "location": DEFAULT_LOCATION
     })
-from django.http import StreamingHttpResponse
 
+
+# Webcam placeholders (safe)
 def webcam_page(request):
     return render(request, "detection/webcam.html")
 

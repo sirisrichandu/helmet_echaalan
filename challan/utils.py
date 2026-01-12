@@ -1,5 +1,6 @@
 import random
 from .models import Challan
+from .email_utils import send_challan_email
 
 
 def generate_unique_echallan_number():
@@ -14,10 +15,10 @@ def generate_unique_echallan_number():
 
 def generate_challan(violation):
     """
-    Called ONLY after admin approval
+    Generate challan ONLY after admin approval
     """
 
-    # Safety: avoid duplicates for same violation
+    # 🚫 Prevent duplicate challans
     if violation.challans.exists():
         return violation.challans.first()
 
@@ -28,5 +29,13 @@ def generate_challan(violation):
         echallan_number=generate_unique_echallan_number(),
         fine_amount=fine_amount
     )
+
+    # 📧 Send email if vehicle + email exist
+    try:
+        if violation.vehicle and violation.vehicle.owner_email:
+            send_challan_email(challan)
+    except Exception as e:
+        # ❗ Never block challan creation due to email failure
+        print("Email sending failed:", e)
 
     return challan
