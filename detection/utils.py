@@ -6,31 +6,55 @@ from django.conf import settings
 
 BASE_DIR = settings.BASE_DIR
 
+# Models
+bike_model = YOLO("yolov8n.pt")  # COCO
 helmet_model = YOLO(os.path.join(BASE_DIR, "detection/yolo/helmet.pt"))
 plate_model = YOLO(os.path.join(BASE_DIR, "detection/yolo/plate.pt"))
 
+# OCR
 reader = easyocr.Reader(['en'], gpu=False)
 
 
-def detect_helmet_violation(source):
+def detect_bikes(image):
     """
-    Returns:
-    True  → NO HELMET detected (violation)
-    False → Helmet worn (safe)
+    Detect motorcycles/bikes using YOLOv8 COCO
     """
-    results = helmet_model(source, conf=0.5)[0]
+    results = bike_model(image, conf=0.4)[0]
+    bikes = []
+
+    for box in results.boxes:
+        cls = int(box.cls[0])
+        label = bike_model.names[cls]
+
+        if label == "motorcycle":
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            bikes.append((x1, y1, x2, y2))
+
+    return bikes
+
+
+def detect_helmet_violation(image_path):
+    """
+    Detect helmet violation on FULL IMAGE
+    True  → NO HELMET detected
+    False → Helmet worn
+    """
+    results = helmet_model(image_path, conf=0.4)[0]
 
     for box in results.boxes:
         cls = int(box.cls[0])
         label = helmet_model.names[cls].lower()
 
         if label == "nohelmet":
-            return True   # 🚨 violation
+            return True
 
-    return False  # ✅ helmet worn
+    return False
 
 
 def detect_plates_and_ocr(image_path):
+    """
+    Detect number plates + OCR
+    """
     img = cv2.imread(image_path)
     results = plate_model(image_path, conf=0.4)
 
@@ -60,4 +84,4 @@ def detect_plates_and_ocr(image_path):
                 "img": plate_img
             })
 
-    return detections, None
+    return detections

@@ -13,7 +13,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            max-width: 700px;
+            max-width: 800px;
             margin: auto;
         }
         img {
@@ -24,6 +24,12 @@
         }
         .yes { color: green; font-weight: bold; }
         .no { color: red; font-weight: bold; }
+        .violation {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -31,33 +37,38 @@
 <div class="card">
     <h2>🚘 Detection Results</h2>
 
-    <p><strong>Helmet Detected:</strong>
-        {% if helmet_detected %}
-            <span class="yes">YES</span>
-        {% else %}
-            <span class="no">NO</span>
-        {% endif %}
-    </p>
-
     <p><strong>Location:</strong> {{ location.name }}</p>
 
     <h3>📷 Uploaded Image</h3>
     <img src="{{ uploaded_image }}">
 
-    <p><strong>Vehicle Number:</strong>
-        {{ vehicle_number|default:"Not detected" }}
-    </p>
+    {% if violations %}
+        <h3 class="no">❌ Helmet Violations Detected: {{ violations|length }}</h3>
 
-    {% if confidence %}
-        <p><strong>OCR Confidence:</strong> {{ confidence }}%</p>
+        {% for v in violations %}
+            <div class="violation">
+                <p><strong>Helmet:</strong> <span class="no">NO</span></p>
+
+                <p><strong>Vehicle Number:</strong>
+                    {{ v.vehicle_number|default:"Not detected" }}
+                </p>
+
+                {% if v.confidence %}
+                    <p><strong>OCR Confidence:</strong> {{ v.confidence }}%</p>
+                {% endif %}
+
+                {% if v.plate_image %}
+                    <p><strong>Detected Plate:</strong></p>
+                    <img src="{{ v.plate_image.url }}">
+                {% endif %}
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <h3 class="yes">✅ No Helmet Violations Found</h3>
     {% endif %}
 
-    {% if plate_image %}
-        <h3>🔍 Detected Number Plate</h3>
-        <img src="{{ plate_image }}">
-    {% endif %}
-
-    <br><br>
+    <br>
     <a href="{% url 'upload' %}">🔄 Upload Another Image</a>
 </div>
 
