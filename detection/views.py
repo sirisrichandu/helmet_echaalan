@@ -119,15 +119,21 @@ def handle_image(request, image_file):
 # Webcam placeholders (SAFE)
 # ===============================
 """
+
 import os
 import cv2
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.http import StreamingHttpResponse
-
 from .models import Violation
-from .utils import detect_bikes, detect_helmet_violation, detect_plates_and_ocr
+from .utils import (
+    detect_persons_and_bikes,
+    overlap,
+    extract_head,
+    no_helmet_on_head,
+    detect_plate_and_ocr
+)
 from vehicles.models import Vehicle
 
 
@@ -142,9 +148,7 @@ def upload_image(request):
     if request.method == "POST":
         image = request.FILES.get("media")
         if not image:
-            return render(request, "detection/upload.html", {
-                "error": "Please upload an image"
-            })
+            return render(request, "detection/upload.html", {"error": "Upload image"})
         return handle_image(request, image)
 
     return render(request, "detection/upload.html")
@@ -153,87 +157,81 @@ def upload_image(request):
 def handle_image(request, image_file):
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
-    # Save uploaded image
     temp_path = os.path.join(settings.MEDIA_ROOT, "temp.jpg")
     with open(temp_path, "wb+") as f:
         for chunk in image_file.chunks():
             f.write(chunk)
 
-    uploaded_image_url = "/media/temp.jpg"
-
     img = cv2.imread(temp_path)
-    output = img.copy()
 
-    # 🔴 Helmet detection ON FULL IMAGE (CRITICAL FIX)
-    violation_found = detect_helmet_violation(temp_path)
+    persons, bikes = detect_persons_and_bikes(img)
 
-    bikes = detect_bikes(img)
+    # ===============================
+    # ASSIGN PERSONS TO BIKES
+    # ===============================
+    bike_persons = {}
+    for bike in bikes:
+        bike_persons[bike] = []
+        for person in persons:
+            if overlap(person, bike):
+                bike_persons[bike].append(person)
+
     violations = []
 
-    for (x1, y1, x2, y2) in bikes:
+    # ===============================
+    # CHECK EACH PERSON
+    # ===============================
+    for bike_box, persons_on_bike in bike_persons.items():
+        bx1, by1, bx2, by2 = bike_box
+        bike_crop = img[by1:by2, bx1:bx2]
 
-        if violation_found:
-            # 🔴 RED BOX
-            cv2.rectangle(output, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            cv2.putText(output, "NO HELMET", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        plate_data = detect_plate_and_ocr(bike_crop)
 
-            violation = Violation.objects.create(
-                helmet_detected=False,
-                location=DEFAULT_LOCATION["name"],
-                latitude=DEFAULT_LOCATION["lat"],
-                longitude=DEFAULT_LOCATION["lng"]
-            )
+        for person in persons_on_bike:
+            head = extract_head(person, img)
 
-            violation.image.save(
-                f"violation_{violation.id}.jpg",
-                ContentFile(open(temp_path, "rb").read())
-            )
+            if no_helmet_on_head(head):
+                violation = Violation.objects.create(
+                    helmet_detected=False,
+                    location=DEFAULT_LOCATION["name"],
+                    latitude=DEFAULT_LOCATION["lat"],
+                    longitude=DEFAULT_LOCATION["lng"]
+                )
 
-            # 🔍 Plate detection ONLY on violation
-            plates = detect_plates_and_ocr(temp_path)
-            if plates:
-                best = plates[0]
-                violation.vehicle_number = best["text"]
-                violation.confidence = best["confidence"]
+                violation.image.save(
+                    f"violation_{violation.id}.jpg",
+                    ContentFile(open(temp_path, "rb").read())
+                )
 
-                plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
-                os.makedirs(plate_dir, exist_ok=True)
-                plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
-                cv2.imwrite(plate_path, best["img"])
-                violation.plate_image = f"plates/{violation.id}.jpg"
+                if plate_data:
+                    violation.vehicle_number = plate_data["text"]
+                    violation.confidence = plate_data["confidence"]
 
-                try:
-                    violation.vehicle = Vehicle.objects.get(
-                        vehicle_number=violation.vehicle_number
-                    )
-                except Vehicle.DoesNotExist:
-                    pass
+                    plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
+                    os.makedirs(plate_dir, exist_ok=True)
+                    plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
+                    cv2.imwrite(plate_path, plate_data["img"])
+                    violation.plate_image = f"plates/{violation.id}.jpg"
 
-            violation.save()
-            violations.append(violation)
+                    try:
+                        violation.vehicle = Vehicle.objects.get(
+                            vehicle_number=plate_data["text"]
+                        )
+                    except Vehicle.DoesNotExist:
+                        pass
 
-        else:
-            # 🟢 GREEN BOX
-            cv2.rectangle(output, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(output, "HELMET", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-    # Save annotated output
-    ann_dir = os.path.join(settings.MEDIA_ROOT, "annotated")
-    os.makedirs(ann_dir, exist_ok=True)
-    ann_path = os.path.join(ann_dir, "result.jpg")
-    cv2.imwrite(ann_path, output)
+                violation.save()
+                violations.append(violation)
 
     return render(request, "detection/result.html", {
+        "uploaded_image": "/media/temp.jpg",
         "violations": violations,
-        "uploaded_image": uploaded_image_url,
-        "annotated_image": "/media/annotated/result.jpg",
+        "violation_count": len(violations),
         "location": DEFAULT_LOCATION
     })
-
-
-# Webcam placeholders
+# -----------------------------
+# Webcam (safe placeholders)
+# -----------------------------
 def webcam_page(request):
     return render(request, "detection/webcam.html")
 

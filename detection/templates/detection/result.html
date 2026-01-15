@@ -3,70 +3,42 @@
 <head>
     <title>Detection Results</title>
     <style>
-        body {
-            font-family: Arial;
-            background: #f4f6f8;
-            padding: 30px;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            max-width: 800px;
-            margin: auto;
-        }
-        img {
-            max-width: 100%;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
-        .yes { color: green; font-weight: bold; }
+        body { font-family: Arial; background: #f4f6f8; padding: 30px; }
+        .card { background: white; padding: 20px; border-radius: 10px;
+                max-width: 900px; margin: auto; }
+        img { max-width: 100%; border-radius: 6px; margin-top: 10px; }
+        .violation { border-top: 1px solid #ccc; margin-top: 20px; padding-top: 10px; }
         .no { color: red; font-weight: bold; }
-        .violation {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 6px;
-        }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>🚘 Detection Results</h2>
-
-    <p><strong>Location:</strong> {{ location.name }}</p>
+    <p><b>Location:</b> {{ location.name }}</p>
 
     <h3>📷 Uploaded Image</h3>
     <img src="{{ uploaded_image }}">
 
-    {% if violations %}
-        <h3 class="no">❌ Helmet Violations Detected: {{ violations|length }}</h3>
+    <h3>🖍 Annotated Output</h3>
+    <img src="{{ annotated_image }}">
 
-        {% for v in violations %}
-            <div class="violation">
-                <p><strong>Helmet:</strong> <span class="no">NO</span></p>
+    <h3>❌ Helmet Violations Detected: {{ violations|length }}</h3>
 
-                <p><strong>Vehicle Number:</strong>
-                    {{ v.vehicle_number|default:"Not detected" }}
-                </p>
+    {% for v in violations %}
+        <div class="violation">
+            <p class="no">Helmet: NO</p>
+            <p><b>Vehicle Number:</b> {{ v.vehicle_number }}</p>
+            <p><b>OCR Confidence:</b> {{ v.confidence }}%</p>
 
-                {% if v.confidence %}
-                    <p><strong>OCR Confidence:</strong> {{ v.confidence }}%</p>
-                {% endif %}
-
-                {% if v.plate_image %}
-                    <p><strong>Detected Plate:</strong></p>
-                    <img src="{{ v.plate_image.url }}">
-                {% endif %}
-            </div>
-        {% endfor %}
-
-    {% else %}
-        <h3 class="yes">✅ No Helmet Violations Found</h3>
-    {% endif %}
+            {% if v.plate_image %}
+                <p><b>Detected Plate:</b></p>
+                <img src="{{ v.plate_image.url }}">
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No helmet violations detected.</p>
+    {% endfor %}
 
     <br>
     <a href="{% url 'upload' %}">🔄 Upload Another Image</a>
