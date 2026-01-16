@@ -119,23 +119,21 @@ def handle_image(request, image_file):
 # Webcam placeholders (SAFE)
 # ===============================
 """
-
+from django.http import StreamingHttpResponse
 import os
 import cv2
 from django.shortcuts import render
 from django.conf import settings
-from django.core.files.base import ContentFile
 from django.http import StreamingHttpResponse
+from django.core.files.base import ContentFile
+
 from .models import Violation
 from .utils import (
     detect_persons_and_bikes,
-    overlap,
-    extract_head,
-    no_helmet_on_head,
-    detect_plate_and_ocr
+    detect_nohelmet_boxes,
+    detect_plate_and_ocr,
+    overlap
 )
-from vehicles.models import Vehicle
-
 
 DEFAULT_LOCATION = {
     "name": "Bhimavaram",
@@ -144,103 +142,113 @@ DEFAULT_LOCATION = {
 }
 
 
+# =======================
+# IMAGE UPLOAD
+# =======================
 def upload_image(request):
     if request.method == "POST":
         image = request.FILES.get("media")
         if not image:
-            return render(request, "detection/upload.html", {"error": "Upload image"})
-        return handle_image(request, image)
+            return render(request, "detection/upload.html")
+
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        temp_path = os.path.join(settings.MEDIA_ROOT, "temp.jpg")
+
+        with open(temp_path, "wb+") as f:
+            for chunk in image.chunks():
+                f.write(chunk)
+
+        img = cv2.imread(temp_path)
+
+        persons, bikes = detect_persons_and_bikes(img)
+        nohelmets = detect_nohelmet_boxes(img)
+
+        violations = []
+        used_persons = set()
+
+        for p in persons:
+            for nh in nohelmets:
+                if overlap(p, nh) and p not in used_persons:
+                    used_persons.add(p)
+
+                    violation = Violation.objects.create(
+                        helmet_detected=False,
+                        location=DEFAULT_LOCATION["name"],
+                        latitude=DEFAULT_LOCATION["lat"],
+                        longitude=DEFAULT_LOCATION["lng"]
+                    )
+
+                    violation.image.save(
+                        f"violation_{violation.id}.jpg",
+                        ContentFile(open(temp_path, "rb").read())
+                    )
+
+                    # Match bike
+                    for b in bikes:
+                        if overlap(p, b):
+                            bx1, by1, bx2, by2 = b
+                            bike_crop = img[by1:by2, bx1:bx2]
+
+                            plate = detect_plate_and_ocr(bike_crop)
+                            if plate:
+                                violation.vehicle_number = plate["text"]
+                                violation.confidence = plate["confidence"]
+
+                                plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
+                                os.makedirs(plate_dir, exist_ok=True)
+                                plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
+                                cv2.imwrite(plate_path, plate["img"])
+                                violation.plate_image = f"plates/{violation.id}.jpg"
+                            break
+
+                    violation.save()
+                    violations.append(violation)
+                    break
+
+        return render(request, "detection/result.html", {
+            "violations": violations,
+            "uploaded_image": "/media/temp.jpg",
+            "location": DEFAULT_LOCATION
+        })
 
     return render(request, "detection/upload.html")
 
 
-def handle_image(request, image_file):
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+# =======================
+# VIDEO STREAMING
+# =======================
+def video_feed():
+    cap = cv2.VideoCapture(0)
 
-    temp_path = os.path.join(settings.MEDIA_ROOT, "temp.jpg")
-    with open(temp_path, "wb+") as f:
-        for chunk in image_file.chunks():
-            f.write(chunk)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    img = cv2.imread(temp_path)
+        nohelmets = detect_nohelmet_boxes(frame)
 
-    persons, bikes = detect_persons_and_bikes(img)
+        for (x1, y1, x2, y2) in nohelmets:
+            cv2.putText(frame, "NO HELMET", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-    # ===============================
-    # ASSIGN PERSONS TO BIKES
-    # ===============================
-    bike_persons = {}
-    for bike in bikes:
-        bike_persons[bike] = []
-        for person in persons:
-            if overlap(person, bike):
-                bike_persons[bike].append(person)
-
-    violations = []
-
-    # ===============================
-    # CHECK EACH PERSON
-    # ===============================
-    for bike_box, persons_on_bike in bike_persons.items():
-        bx1, by1, bx2, by2 = bike_box
-        bike_crop = img[by1:by2, bx1:bx2]
-
-        plate_data = detect_plate_and_ocr(bike_crop)
-
-        for person in persons_on_bike:
-            head = extract_head(person, img)
-
-            if no_helmet_on_head(head):
-                violation = Violation.objects.create(
-                    helmet_detected=False,
-                    location=DEFAULT_LOCATION["name"],
-                    latitude=DEFAULT_LOCATION["lat"],
-                    longitude=DEFAULT_LOCATION["lng"]
-                )
-
-                violation.image.save(
-                    f"violation_{violation.id}.jpg",
-                    ContentFile(open(temp_path, "rb").read())
-                )
-
-                if plate_data:
-                    violation.vehicle_number = plate_data["text"]
-                    violation.confidence = plate_data["confidence"]
-
-                    plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
-                    os.makedirs(plate_dir, exist_ok=True)
-                    plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
-                    cv2.imwrite(plate_path, plate_data["img"])
-                    violation.plate_image = f"plates/{violation.id}.jpg"
-
-                    try:
-                        violation.vehicle = Vehicle.objects.get(
-                            vehicle_number=plate_data["text"]
-                        )
-                    except Vehicle.DoesNotExist:
-                        pass
-
-                violation.save()
-                violations.append(violation)
-
-    return render(request, "detection/result.html", {
-        "uploaded_image": "/media/temp.jpg",
-        "violations": violations,
-        "violation_count": len(violations),
-        "location": DEFAULT_LOCATION
-    })
-# -----------------------------
-# Webcam (safe placeholders)
-# -----------------------------
-def webcam_page(request):
-    return render(request, "detection/webcam.html")
+        _, buffer = cv2.imencode(".jpg", frame)
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n" +
+            buffer.tobytes() +
+            b"\r\n"
+        )
 
 
 def webcam_feed(request):
     return StreamingHttpResponse(
-        b"",
+        video_feed(),
         content_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+def webcam_page(request):
+    return render(request, "detection/webcam.html")
 
 
 def start_webcam(request):
