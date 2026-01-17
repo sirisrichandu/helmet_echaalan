@@ -144,5 +144,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'chandusirisri@gmail.com'
-EMAIL_HOST_PASSWORD = 'qtdbioqmtnandrzb'
+EMAIL_HOST_PASSWORD = 'rzpmyqicffdaplox'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

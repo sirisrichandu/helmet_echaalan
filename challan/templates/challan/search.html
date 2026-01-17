@@ -1,84 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>e-Challan Search</title>
+    <title>Search e-Challan</title>
     <style>
         body {
             font-family: Arial;
-            background:#f4f6f8;
-            padding:30px;
+            background: #f4f6f8;
+            padding: 30px;
         }
-        .box {
-            background:white;
-            padding:20px;
-            border-radius:8px;
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 900px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+        .paid { color: green; font-weight: bold; }
+        .unpaid { color: red; font-weight: bold; }
         img {
-            max-width:300px;
-            margin-top:10px;
-            border:1px solid #ccc;
-            border-radius:5px;
-        }
-        .challan {
-            border-top:1px solid #ddd;
-            margin-top:20px;
-            padding-top:15px;
-        }
-        iframe {
-            margin-top:10px;
-            border-radius:6px;
+            width: 120px;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
 
-<div class="box">
+<div class="card">
     <h2>🔍 Search e-Challan</h2>
 
     <form method="get">
-        <input type="text" name="q" placeholder="e-Challan No or Vehicle No" required>
+        <input type="text" name="q" placeholder="Enter Challan No or Vehicle No"
+               value="{{ query }}" required>
         <button type="submit">Search</button>
     </form>
 
     {% if query %}
         <h3>Results for "{{ query }}"</h3>
-    {% endif %}
 
-    {% for c in challans %}
-        <div class="challan">
-            <p><b>e-Challan No:</b> {{ c.echallan_number }}</p>
-            <p><b>Vehicle No:</b> {{ c.violation.vehicle_number }}</p>
-            <p><b>Fine Amount:</b> ₹{{ c.fine_amount }}</p>
-            <p><b>Location:</b> {{ c.violation.location }}</p>
-            <p><b>Date & Time:</b> {{ c.issued_at }}</p>
+        {% if challans %}
+            <table>
+                <tr>
+                    <th>Challan No</th>
+                    <th>Vehicle No</th>
+                    <th>Fine (₹)</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Evidence</th>
+                </tr>
 
-            <!-- 📍 GOOGLE MAP -->
-            {% if c.violation.latitude and c.violation.longitude %}
-                <h4>📍 Violation Location</h4>
-                <iframe
-                    width="100%"
-                    height="250"
-                    frameborder="0"
-                    style="border:0"
-                    src="https://www.google.com/maps?q={{ c.violation.latitude }},{{ c.violation.longitude }}&output=embed"
-                    allowfullscreen>
-                </iframe>
-            {% endif %}
-
-            <h4>📷 Violation Evidence</h4>
-            {% if c.violation.image %}
-                <img src="{{ c.violation.image.url }}">
-            {% endif %}
-
-            {% if c.violation.plate_image %}
-                <img src="{{ c.violation.plate_image.url }}">
-            {% endif %}
-        </div>
-    {% empty %}
-        {% if query %}
-            <p>No challans found.</p>
+                {% for challan in challans %}
+                <tr>
+                    <td>{{ challan.echallan_number }}</td>
+                    <td>{{ challan.violation.vehicle_number }}</td>
+                    <td>{{ challan.fine_amount }}</td>
+                    <td>
+                        {% if challan.paid %}
+                            <span class="paid">PAID</span>
+                        {% else %}
+                            <span class="unpaid">UNPAID</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ challan.issued_at|date:"d-m-Y H:i" }}</td>
+                    <td>
+                        {% if challan.violation.image %}
+                            <img src="{{ challan.violation.image.url }}">
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No challan found.</p>
         {% endif %}
-    {% endfor %}
+    {% endif %}
 </div>
 
 </body>

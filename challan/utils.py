@@ -5,7 +5,7 @@ from .email_utils import send_challan_email
 
 def generate_unique_echallan_number():
     """
-    Generates a unique 5-digit e-Challan number (00000–99999)
+    Generates a unique 5-digit e-Challan number
     """
     while True:
         number = f"{random.randint(0, 99999):05d}"
@@ -30,12 +30,11 @@ def generate_challan(violation):
         fine_amount=fine_amount
     )
 
-    # 📧 Send email if vehicle + email exist
+    # 📧 Send email safely
     try:
-        if violation.vehicle and violation.vehicle.owner_email:
-            send_challan_email(challan)
+        send_challan_email(challan)
     except Exception as e:
-        # ❗ Never block challan creation due to email failure
+        # Never break challan creation
         print("Email sending failed:", e)
 
     return challan

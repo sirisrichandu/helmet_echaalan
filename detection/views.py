@@ -124,8 +124,8 @@ import os
 import cv2
 from django.shortcuts import render
 from django.conf import settings
-from django.http import StreamingHttpResponse
 from django.core.files.base import ContentFile
+from django.http import StreamingHttpResponse
 
 from .models import Violation
 from .utils import (
@@ -134,6 +134,7 @@ from .utils import (
     detect_plate_and_ocr,
     overlap
 )
+from vehicles.models import Vehicle   # ✅ REQUIRED FOR EMAIL
 
 DEFAULT_LOCATION = {
     "name": "Bhimavaram",
@@ -171,6 +172,9 @@ def upload_image(request):
                 if overlap(p, nh) and p not in used_persons:
                     used_persons.add(p)
 
+                    # -------------------
+                    # CREATE VIOLATION
+                    # -------------------
                     violation = Violation.objects.create(
                         helmet_detected=False,
                         location=DEFAULT_LOCATION["name"],
@@ -183,7 +187,9 @@ def upload_image(request):
                         ContentFile(open(temp_path, "rb").read())
                     )
 
-                    # Match bike
+                    # -------------------
+                    # MATCH BIKE + PLATE
+                    # -------------------
                     for b in bikes:
                         if overlap(p, b):
                             bx1, by1, bx2, by2 = b
@@ -191,14 +197,28 @@ def upload_image(request):
 
                             plate = detect_plate_and_ocr(bike_crop)
                             if plate:
-                                violation.vehicle_number = plate["text"]
+                                vehicle_number = plate["text"]
+
+                                violation.vehicle_number = vehicle_number
                                 violation.confidence = plate["confidence"]
 
+                                # Save plate image
                                 plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
                                 os.makedirs(plate_dir, exist_ok=True)
-                                plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
+                                plate_path = os.path.join(
+                                    plate_dir, f"{violation.id}.jpg"
+                                )
                                 cv2.imwrite(plate_path, plate["img"])
                                 violation.plate_image = f"plates/{violation.id}.jpg"
+
+                                # ✅ CRITICAL FIX: LINK VEHICLE
+                                try:
+                                    vehicle = Vehicle.objects.get(
+                                        vehicle_number__iexact=vehicle_number.strip()
+                                    )
+                                    violation.vehicle = vehicle
+                                except Vehicle.DoesNotExist:
+                                    violation.vehicle = None
                             break
 
                     violation.save()
@@ -228,15 +248,22 @@ def video_feed():
         nohelmets = detect_nohelmet_boxes(frame)
 
         for (x1, y1, x2, y2) in nohelmets:
-            cv2.putText(frame, "NO HELMET", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            cv2.putText(
+                frame,
+                "NO HELMET",
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 255),
+                2
+            )
 
         _, buffer = cv2.imencode(".jpg", frame)
         yield (
             b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n" +
-            buffer.tobytes() +
-            b"\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n"
+            + buffer.tobytes()
+            + b"\r\n"
         )
 
 
