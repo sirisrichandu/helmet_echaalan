@@ -128,14 +128,9 @@ from django.core.files.base import ContentFile
 from django.http import StreamingHttpResponse
 
 from .models import Violation
-from .utils import (
-    detect_persons_and_bikes,
-    detect_nohelmet_boxes,
-    detect_plate_and_ocr,
-    overlap
-)
+from .utils import (detect_persons_and_bikes,detect_nohelmet_boxes,detect_plate_and_ocr,overlap)
 
-from detection.utils import(get_helemt_model,get_plate_model,get_vehicle_model)
+from detection.utils import(get_helmet_model,get_plate_model,get_vehicle_model)
 from vehicles.models import Vehicle   # ✅ REQUIRED FOR EMAIL
 
 DEFAULT_LOCATION = {
@@ -144,10 +139,6 @@ DEFAULT_LOCATION = {
     "lng": 81.5212
 }
 
-
-# =======================
-# IMAGE UPLOAD
-# =======================
 def upload_image(request):
     if request.method == "POST":
         image = request.FILES.get("media")
@@ -174,9 +165,6 @@ def upload_image(request):
                 if overlap(p, nh) and p not in used_persons:
                     used_persons.add(p)
 
-                    # -------------------
-                    # CREATE VIOLATION
-                    # -------------------
                     violation = Violation.objects.create(
                         helmet_detected=False,
                         location=DEFAULT_LOCATION["name"],
@@ -189,9 +177,6 @@ def upload_image(request):
                         ContentFile(open(temp_path, "rb").read())
                     )
 
-                    # -------------------
-                    # MATCH BIKE + PLATE
-                    # -------------------
                     for b in bikes:
                         if overlap(p, b):
                             bx1, by1, bx2, by2 = b
@@ -199,12 +184,9 @@ def upload_image(request):
 
                             plate = detect_plate_and_ocr(bike_crop)
                             if plate:
-                                vehicle_number = plate["text"]
-
-                                violation.vehicle_number = vehicle_number
+                                violation.vehicle_number = plate["text"]
                                 violation.confidence = plate["confidence"]
 
-                                # Save plate image
                                 plate_dir = os.path.join(settings.MEDIA_ROOT, "plates")
                                 os.makedirs(plate_dir, exist_ok=True)
                                 plate_path = os.path.join(
@@ -213,10 +195,9 @@ def upload_image(request):
                                 cv2.imwrite(plate_path, plate["img"])
                                 violation.plate_image = f"plates/{violation.id}.jpg"
 
-                                # ✅ CRITICAL FIX: LINK VEHICLE
                                 try:
                                     vehicle = Vehicle.objects.get(
-                                        vehicle_number__iexact=vehicle_number.strip()
+                                        vehicle_number__iexact=violation.vehicle_number.strip()
                                     )
                                     violation.vehicle = vehicle
                                 except Vehicle.DoesNotExist:
@@ -234,6 +215,10 @@ def upload_image(request):
         })
 
     return render(request, "detection/upload.html")
+# =======================
+# IMAGE UPLOAD
+# =======================
+
 
 
 # =======================
