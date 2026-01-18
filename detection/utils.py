@@ -1,10 +1,5 @@
-import cv2
-import easyocr
-from ultralytics import YOLO
-import os
-
 # =======================
-# LAZY-LOADED MODELS
+# LAZY GLOBALS
 # =======================
 
 _helmet_model = None
@@ -13,9 +8,22 @@ _vehicle_model = None
 _reader = None
 
 
+# =======================
+# MODEL LOADERS
+# =======================
+
+def get_vehicle_model():
+    global _vehicle_model
+    if _vehicle_model is None:
+        from ultralytics import YOLO
+        _vehicle_model = YOLO("yolov8n.pt")
+    return _vehicle_model
+
+
 def get_helmet_model():
     global _helmet_model
     if _helmet_model is None:
+        from ultralytics import YOLO
         _helmet_model = YOLO("helmet.pt")
     return _helmet_model
 
@@ -23,20 +31,15 @@ def get_helmet_model():
 def get_plate_model():
     global _plate_model
     if _plate_model is None:
+        from ultralytics import YOLO
         _plate_model = YOLO("plate.pt")
     return _plate_model
-
-
-def get_vehicle_model():
-    global _vehicle_model
-    if _vehicle_model is None:
-        _vehicle_model = YOLO("yolov8n.pt")
-    return _vehicle_model
 
 
 def get_ocr_reader():
     global _reader
     if _reader is None:
+        import easyocr
         _reader = easyocr.Reader(['en'], gpu=False)
     return _reader
 
