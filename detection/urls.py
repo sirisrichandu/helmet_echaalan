@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 urlpatterns = [
-    # ROOT URL → redirect to detection app
+    # ROOT → detection home
     path('', lambda request: redirect('/detect/')),
 
     path('admin/', admin.site.urls),
