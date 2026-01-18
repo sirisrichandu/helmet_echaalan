@@ -1,7 +1,13 @@
+
 from django.urls import path
-from .views import upload_image, webcam_feed
+from . import views
 
 urlpatterns = [
-    path('upload/', upload_image, name='upload'),
-    path('webcam/', webcam_feed, name='webcam'),
+    path('', views.upload_image, name='upload_image'),
+
+    path('webcam/', views.webcam_page, name='webcam_page'),
+    path('video-feed/', views.webcam_feed, name='webcam_feed'),
+
+    path('start/', views.start_webcam, name='start_webcam'),
+    path('stop/', views.stop_webcam, name='stop_webcam'),
 ]
