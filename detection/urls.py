@@ -1,13 +1,13 @@
-
-from django.urls import path
-from . import views
+from django.contrib import admin
+from django.urls import path, include
+from django.shortcuts import redirect
 
 urlpatterns = [
-    path('', views.upload_image, name='upload_image'),
+    # ROOT URL → redirect to detection app
+    path('', lambda request: redirect('/detect/')),
 
-    path('webcam/', views.webcam_page, name='webcam_page'),
-    path('video-feed/', views.webcam_feed, name='webcam_feed'),
-
-    path('start/', views.start_webcam, name='start_webcam'),
-    path('stop/', views.stop_webcam, name='stop_webcam'),
+    path('admin/', admin.site.urls),
+    path('detect/', include('detection.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('challan/', include('challan.urls')),
 ]
