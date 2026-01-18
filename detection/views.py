@@ -134,6 +134,8 @@ from .utils import (
     detect_plate_and_ocr,
     overlap
 )
+
+from detection.utils import(get_helemt_model,get_plate_model,get_vehicle_model)
 from vehicles.models import Vehicle   # ✅ REQUIRED FOR EMAIL
 
 DEFAULT_LOCATION = {

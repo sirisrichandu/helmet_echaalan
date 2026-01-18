@@ -1,15 +1,34 @@
-import os
+
 import cv2
 import easyocr
 from ultralytics import YOLO
-from django.conf import settings
 
 # =======================
 # MODELS
 # =======================
-person_bike_model = YOLO("yolov8n.pt")  # COCO
-helmet_model = YOLO(os.path.join(settings.BASE_DIR, "detection/yolo/helmet.pt"))
-plate_model = YOLO(os.path.join(settings.BASE_DIR, "detection/yolo/plate.pt"))
+
+
+_helmet_model = None
+_plate_model = None
+_vehicle_model = None
+
+def get_helmet_model():
+    global _helmet_model
+    if _helmet_model is None:
+        _helmet_model = YOLO("helmet.pt")
+    return _helmet_model
+
+def get_plate_model():
+    global _plate_model
+    if _plate_model is None:
+        _plate_model = YOLO("plate.pt")
+    return _plate_model
+
+def get_vehicle_model():
+    global _vehicle_model
+    if _vehicle_model is None:
+        _vehicle_model = YOLO("yolov8n.pt")
+    return _vehicle_model
 
 reader = easyocr.Reader(['en'], gpu=False)
 
@@ -27,11 +46,12 @@ def overlap(a, b):
 # DETECT PERSONS & BIKES
 # =======================
 def detect_persons_and_bikes(image):
-    res = person_bike_model(image, conf=0.35)[0]
+    model=get_vehicle_model()
+    res = model(image, conf=0.35)[0]
     persons, bikes = [], []
 
     for box in res.boxes:
-        label = person_bike_model.names[int(box.cls[0])]
+        label = model.names[int(box.cls[0])]
         x1, y1, x2, y2 = map(int, box.xyxy[0])
 
         if label == "person":
@@ -46,11 +66,12 @@ def detect_persons_and_bikes(image):
 # NO HELMET DETECTION (FULL IMAGE)
 # =======================
 def detect_nohelmet_boxes(image):
-    res = helmet_model(image, conf=0.35)[0]
+    model=get_helmet_model()
+    res = model(image, conf=0.35)[0]
     nohelmets = []
 
     for box in res.boxes:
-        label = helmet_model.names[int(box.cls[0])].lower()
+        label = model.names[int(box.cls[0])].lower()
         if "nohelmet" in label:
             nohelmets.append(tuple(map(int, box.xyxy[0])))
 
@@ -61,7 +82,8 @@ def detect_nohelmet_boxes(image):
 # PLATE + OCR (IMPROVED)
 # =======================
 def detect_plate_and_ocr(bike_crop):
-    res = plate_model(bike_crop, conf=0.4)[0]
+    model=get_plate_model()
+    res = model(bike_crop, conf=0.4)[0]
 
     best = None
     best_conf = 0
