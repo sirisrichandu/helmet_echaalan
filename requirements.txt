@@ -7,7 +7,6 @@ django-cloudinary-storage
 
 numpy
 pillow
-
 opencv-python-headless
 
 torch
@@ -16,3 +15,5 @@ ultralytics
 
 psycopg2-binary
 dj-database-url
+
+reportlab
