@@ -1,16 +1,17 @@
-
 import cv2
 import easyocr
 from ultralytics import YOLO
+import os
 
 # =======================
-# MODELS
+# LAZY-LOADED MODELS
 # =======================
-
 
 _helmet_model = None
 _plate_model = None
 _vehicle_model = None
+_reader = None
+
 
 def get_helmet_model():
     global _helmet_model
@@ -18,11 +19,13 @@ def get_helmet_model():
         _helmet_model = YOLO("helmet.pt")
     return _helmet_model
 
+
 def get_plate_model():
     global _plate_model
     if _plate_model is None:
         _plate_model = YOLO("plate.pt")
     return _plate_model
+
 
 def get_vehicle_model():
     global _vehicle_model
@@ -30,7 +33,12 @@ def get_vehicle_model():
         _vehicle_model = YOLO("yolov8n.pt")
     return _vehicle_model
 
-reader = easyocr.Reader(['en'], gpu=False)
+
+def get_ocr_reader():
+    global _reader
+    if _reader is None:
+        _reader = easyocr.Reader(['en'], gpu=False)
+    return _reader
 
 
 # =======================
@@ -46,8 +54,9 @@ def overlap(a, b):
 # DETECT PERSONS & BIKES
 # =======================
 def detect_persons_and_bikes(image):
-    model=get_vehicle_model()
+    model = get_vehicle_model()
     res = model(image, conf=0.35)[0]
+
     persons, bikes = [], []
 
     for box in res.boxes:
@@ -63,11 +72,12 @@ def detect_persons_and_bikes(image):
 
 
 # =======================
-# NO HELMET DETECTION (FULL IMAGE)
+# NO HELMET DETECTION
 # =======================
 def detect_nohelmet_boxes(image):
-    model=get_helmet_model()
+    model = get_helmet_model()
     res = model(image, conf=0.35)[0]
+
     nohelmets = []
 
     for box in res.boxes:
@@ -79,10 +89,12 @@ def detect_nohelmet_boxes(image):
 
 
 # =======================
-# PLATE + OCR (IMPROVED)
+# PLATE + OCR
 # =======================
 def detect_plate_and_ocr(bike_crop):
-    model=get_plate_model()
+    model = get_plate_model()
+    reader = get_ocr_reader()
+
     res = model(bike_crop, conf=0.4)[0]
 
     best = None
