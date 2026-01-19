@@ -2,7 +2,7 @@ import os
 import cv2
 from django.shortcuts import render
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 
 
 # =========================
@@ -13,6 +13,23 @@ DEFAULT_LOCATION = {
     "lat": 16.5449,
     "lng": 81.5212
 }
+
+
+# =========================
+# WEBCAM PAGE (REQUIRED BY URLS)
+# =========================
+def webcam_page(request):
+    return HttpResponse("Webcam page (demo) working ✅")
+
+
+# =========================
+# WEBCAM FEED (PLACEHOLDER)
+# =========================
+def webcam_feed(request):
+    return StreamingHttpResponse(
+        b"Webcam feed disabled on cloud",
+        content_type="text/plain"
+    )
 
 
 # =========================
@@ -39,16 +56,15 @@ def upload_image(request):
             for chunk in image.chunks():
                 f.write(chunk)
 
-        # Load image with OpenCV
+        # Load image
         img = cv2.imread(img_path)
 
         # -------------------------
-        # SIMPLE DEMO LOGIC
+        # SIMPLE DEMO DETECTION
         # -------------------------
-        helmet_worn = False          # Assume no helmet (demo)
-        vehicle_number = "AP 39 AB 1234"   # Demo number plate
+        helmet_worn = False
+        vehicle_number = "AP 39 AB 1234"
         confidence = 85
-
         challan_required = not helmet_worn
 
         return render(request, "detection/result.html", {
