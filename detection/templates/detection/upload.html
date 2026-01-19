@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Helmet Detection</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,24 +43,51 @@
         button:hover {
             background: #0056b3;
         }
+
+        .error {
+            color: red;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 15px;
+            color: #555;
+            font-size: 14px;
+        }
     </style>
+
+    <script>
+        function showLoading() {
+            document.getElementById("loading").style.display = "block";
+        }
+    </script>
 </head>
+
 <body>
 
 <div class="card">
     <h2>🪖 Helmet Detection</h2>
-     
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
 
-    <label><strong>Upload Image or Video</strong></label><br><br>
-    <input type="file" name="media" accept="image/*,video/*" required>
-    <br><br>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
 
-    <button type="submit">Detect</button>
-</form>
+    <form method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+        {% csrf_token %}
 
+        <label><strong>Upload Image</strong></label><br><br>
 
+        <input type="file" name="media" accept="image/*" required>
+        <br><br>
+
+        <button type="submit">Detect</button>
+
+        <div id="loading" class="loading">
+            ⏳ Processing... Please wait
+        </div>
+    </form>
 </div>
 
 </body>
