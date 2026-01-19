@@ -1,9 +1,10 @@
 import os
 import cv2
+
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 
 from .models import Violation
 from vehicles.models import Vehicle
@@ -21,14 +22,29 @@ DEFAULT_LOCATION = {
 
 
 # =========================
-# FIXED VIEW (IMPORTANT)
+# WEBCAM PAGE (FIXED)
 # =========================
 
 def webcam_page(request):
     """
-    Temporary webcam page to prevent Internal Server Error
+    Simple page to confirm webcam route works
     """
     return HttpResponse("Webcam page working successfully ✅")
+
+
+# =========================
+# WEBCAM FEED (PLACEHOLDER)
+# =========================
+
+def webcam_feed(request):
+    """
+    Placeholder webcam feed to avoid 500 error on Render
+    (Real webcam streaming cannot run on Render free tier)
+    """
+    return StreamingHttpResponse(
+        b"Webcam feed is disabled on server",
+        content_type="text/plain"
+    )
 
 
 # =========================
@@ -40,15 +56,16 @@ def upload_image(request):
     if request.method == "GET":
         return render(request, "detection/upload.html")
 
-    # ---------- POST → AI ----------
+    # ---------- POST ----------
     if request.method == "POST":
         image = request.FILES.get("media")
+
         if not image:
             return render(request, "detection/upload.html", {
                 "error": "Please upload an image"
             })
 
-        # 🔥 LAZY IMPORT (VERY IMPORTANT)
+        # 🔥 LAZY IMPORT (VERY IMPORTANT FOR DEPLOYMENT)
         from .utils import (
             detect_persons_and_bikes,
             detect_nohelmet_boxes,
@@ -56,6 +73,7 @@ def upload_image(request):
             overlap,
         )
 
+        # Save temp image
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
         temp_path = os.path.join(settings.MEDIA_ROOT, "temp.jpg")
 
@@ -83,11 +101,14 @@ def upload_image(request):
                         longitude=DEFAULT_LOCATION["lng"]
                     )
 
-                    violation.image.save(
-                        f"violation_{violation.id}.jpg",
-                        ContentFile(open(temp_path, "rb").read())
-                    )
+                    # Save violation image
+                    with open(temp_path, "rb") as img_file:
+                        violation.image.save(
+                            f"violation_{violation.id}.jpg",
+                            ContentFile(img_file.read())
+                        )
 
+                    # Match bike and detect plate
                     for b in bikes:
                         if overlap(p, b):
                             bx1, by1, bx2, by2 = b
@@ -105,6 +126,7 @@ def upload_image(request):
                                     plate_dir, f"{violation.id}.jpg"
                                 )
                                 cv2.imwrite(plate_path, plate["img"])
+
                                 violation.plate_image = f"plates/{violation.id}.jpg"
 
                                 try:
