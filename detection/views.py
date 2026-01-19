@@ -3,15 +3,37 @@ import cv2
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.http import HttpResponse
 
 from .models import Violation
 from vehicles.models import Vehicle
+
+
+# =========================
+# DEFAULT LOCATION
+# =========================
 
 DEFAULT_LOCATION = {
     "name": "Bhimavaram",
     "lat": 16.5449,
     "lng": 81.5212
 }
+
+
+# =========================
+# FIXED VIEW (IMPORTANT)
+# =========================
+
+def webcam_page(request):
+    """
+    Temporary webcam page to prevent Internal Server Error
+    """
+    return HttpResponse("Webcam page working successfully ✅")
+
+
+# =========================
+# IMAGE UPLOAD + DETECTION
+# =========================
 
 def upload_image(request):
     # ---------- SAFE GET ----------
