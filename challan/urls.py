@@ -1,6 +1,7 @@
+# challan/urls.py
 from django.urls import path
-from .views import search_challan
+from django.http import HttpResponse
 
 urlpatterns = [
-    path('search/', search_challan, name='search_challan'),
+    path('', lambda request: HttpResponse("Challan app working ✅")),
 ]
