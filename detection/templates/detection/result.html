@@ -1,109 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Detection Results</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 30px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            max-width: 900px;
-            margin: auto;
-            box-shadow: 0 0 12px rgba(0,0,0,0.15);
-        }
-
-        h2, h3 {
-            margin-top: 20px;
-        }
-
-        img {
-            max-width: 100%;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-
-        .violation {
-            border-top: 1px solid #ccc;
-            margin-top: 20px;
-            padding-top: 15px;
-        }
-
-        .no {
-            color: red;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .count {
-            background: #ffe5e5;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .back {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 10px 18px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        }
-
-        .back:hover {
-            background: #0056b3;
-        }
-    </style>
+    <title>Detection Result</title>
 </head>
-
 <body>
 
-<div class="card">
-    <h2>🚘 Detection Results</h2>
+<h2>🚦 Helmet Detection Result</h2>
 
-    <p><b>📍 Location:</b> {{ location.name }}</p>
+<p><b>Location:</b> {{ location.name }}</p>
 
-    <h3>📷 Uploaded Image</h3>
-    <img src="{{ uploaded_image }}" alt="Uploaded Image">
+<img src="{{ uploaded_image }}" width="400"><br><br>
 
-    <div class="count">
-        ❌ Helmet Violations Detected: {{ violations|length }}
-    </div>
+{% if helmet_worn %}
+    <p style="color:green;"><b>Helmet Worn ✅</b></p>
+{% else %}
+    <p style="color:red;"><b>Helmet NOT Worn ❌</b></p>
+{% endif %}
 
-    {% if violations %}
-        {% for v in violations %}
-            <div class="violation">
-                <p class="no">Helmet: NOT WORN</p>
+<p><b>Vehicle Number:</b> {{ vehicle_number }}</p>
+<p><b>OCR Confidence:</b> {{ confidence }}%</p>
 
-                {% if v.vehicle_number %}
-                    <p><b>Vehicle Number:</b> {{ v.vehicle_number }}</p>
-                    <p><b>OCR Confidence:</b> {{ v.confidence }}%</p>
-                {% else %}
-                    <p><b>Vehicle Number:</b> Not detected</p>
-                {% endif %}
+{% if challan_required %}
+    <p style="color:red;"><b>E-Challan Generated 🚨</b></p>
+{% else %}
+    <p style="color:green;"><b>No Challan Required ✅</b></p>
+{% endif %}
 
-                {% if v.plate_image %}
-                    <p><b>Detected Plate:</b></p>
-                    <img src="{{ v.plate_image.url }}" alt="Plate Image">
-                {% endif %}
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>✅ No helmet violations detected.</p>
-    {% endif %}
-
-    <a class="back" href="{% url 'upload_image' %}">🔄 Upload Another Image</a>
-</div>
+<br>
+<a href="{% url 'upload_image' %}">Upload Another Image</a>
 
 </body>
 </html>
