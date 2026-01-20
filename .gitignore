@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+# Python cache
+__pycache__/
+*.pyc
+
+# Media temp files
+media/
+# Virtual environment
+venv/
+env/
+
+# Django
+db.sqlite3
+media/
+
+# YOLO / ML models (ignore for user-side deployment)
+yolo/
+models/
+weights/
+runs/
+*.pt
+*.onnx
+*.engine
+# YOLO / ML models (user-side deployment)
+detection/yolo/
+helmet_echaalan/*.pt
+helmet_echaalan/*.onnx
+models/
+weights/
+runs/
+*.pt
+*.onnx
+*.engine
