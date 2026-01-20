@@ -1,5 +1,4 @@
 import os
-import cv2
 
 from django.shortcuts import render
 from django.conf import settings
@@ -131,3 +130,6 @@ def start_webcam(request):
 
 def stop_webcam(request):
     return webcam_page(request)
+
+def home(request):
+    return render(request, "home.html")
