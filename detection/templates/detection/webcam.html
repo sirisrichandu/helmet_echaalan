@@ -1,15 +1,41 @@
-<h2>🎥 Live Helmet Detection</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Webcam</title>
+</head>
+<body>
 
-{% if message %}
-<p style="color:red">{{ message }}</p>
-{% endif %}
+<h2>Admin Webcam Control (Local Only)</h2>
 
-<a href="{% url 'start_webcam' %}">
-    <button>▶ Start Webcam</button>
-</a>
+<video id="video" width="640" height="480" autoplay></video>
+<br><br>
 
-<a href="{% url 'stop_webcam' %}">
-    <button>⏹ Stop Webcam</button>
-</a>
+<button onclick="startCamera()">Start Webcam</button>
+<button onclick="stopCamera()">Stop Webcam</button>
 
-<img src="{% url 'webcam_feed' %}">
+<script>
+let stream = null;
+
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(s => {
+            stream = s;
+            document.getElementById("video").srcObject = stream;
+        })
+        .catch(err => {
+            alert("Camera permission denied");
+            console.error(err);
+        });
+}
+
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        document.getElementById("video").srcObject = null;
+    }
+}
+</script>
+
+</body>
+</html>
