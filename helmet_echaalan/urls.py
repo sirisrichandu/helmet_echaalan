@@ -20,11 +20,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('detect/', include('detection.urls')),
-    path('challan/', include('challan.urls')),
+    # ❌ Do NOT expose detection / webcam
+    # ❌ Do NOT expose admin to public (optional)
+
+    # ✅ Public challan system
+    path('', include('challan.urls')),
 ]
 
+# Serve media only in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
