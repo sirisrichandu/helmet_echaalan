@@ -76,3 +76,24 @@ node_modules/
 # MIGRATION CACHE (SAFE)
 # =========================
 **/migrations/__pycache__/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env
+
+# YOLO models
+*.pt
+
+# Media & static
+media/
+staticfiles/
+
+# OS
+.DS_Store
+Thumbs.db
