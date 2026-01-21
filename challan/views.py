@@ -1,18 +1,23 @@
 from django.shortcuts import render
+from django.db.models import Q
 from .models import Challan
 
-def search_challan(request):
-    query = request.GET.get('q')
 
+def search_challan(request):
+    query = request.GET.get('q', '').strip()
     challans = []
+
     if query:
         challans = Challan.objects.filter(
-            echallan_number=query
-        ) | Challan.objects.filter(
-            violation_vehicle_number=query
+            Q(challan_number__iexact=query) |
+            Q(vehicle_number__iexact=query)
         )
 
-    return render(request, 'challan/search.html', {
-        'challans': challans,
-        'query': query
-    })
+    return render(
+        request,
+        'challan/search.html',
+        {
+            'challans': challans,
+            'query': query
+        }
+    )
