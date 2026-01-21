@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.db.models import Q
 from .models import Challan
 
 
@@ -9,8 +8,7 @@ def search_challan(request):
 
     if query:
         challans = Challan.objects.filter(
-            Q(challan_number__iexact=query) |
-            Q(vehicle_number__iexact=query)
+            echallan_number__iexact=query
         )
 
     return render(
