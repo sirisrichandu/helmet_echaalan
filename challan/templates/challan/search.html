@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!--<!DOCTYPE html>
 <html>
 <head>
     <title>e-Challan Search</title>
@@ -52,7 +52,7 @@
             <p><b>Location:</b> {{ c.violation.location }}</p>
             <p><b>Date & Time:</b> {{ c.issued_at }}</p>
 
-            <!-- 📍 GOOGLE MAP -->
+           
             {% if c.violation.latitude and c.violation.longitude %}
                 <h4>📍 Violation Location</h4>
                 <iframe
@@ -80,6 +80,304 @@
         {% endif %}
     {% endfor %}
 </div>
+
+</body>
+</html>
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Traffic E-Challan System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: #1976d2;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .navbar a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* MAIN */
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .search-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .search-card h2 {
+            margin-bottom: 20px;
+            color: #1976d2;
+        }
+
+        /* RADIO BUTTONS */
+        .radio-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .radio-option input {
+            display: none;
+        }
+
+        .custom-radio {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #1976d2;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+        }
+
+        .radio-option input:checked + .custom-radio::after {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: #1976d2;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .search-card input {
+            width: 70%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .search-card button {
+            background: #1976d2;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* RESULTS */
+        .results {
+            margin-top: 40px;
+        }
+
+        .challan {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .challan h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+
+        .challan p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        .challan img {
+            max-width: 260px;
+            border-radius: 6px;
+            margin: 10px 10px 0 0;
+            border: 1px solid #ddd;
+        }
+
+        iframe {
+            width: 100%;
+            height: 250px;
+            border: 0;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+        }
+
+        /* USER GUIDE */
+        .guide-section {
+            padding: 60px 20px;
+            background: #f8fbff;
+            text-align: center;
+        }
+
+        .guide-title {
+            font-size: 28px;
+            color: #1976d2;
+            margin-bottom: 40px;
+        }
+
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .guide-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .guide-card .icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .search-card input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body id="top">
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>🚦 Traffic E-Challan System</h2>
+    <div>
+        <a href="#top">Home</a>
+        <a href="#user-guide">User Guide</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contact">Contact</a>
+    </div>
+</div>
+
+<!-- SEARCH -->
+<div class="container">
+    <div class="search-card">
+        <h2>Pay Your E-Challan</h2>
+
+        <form method="get">
+            <div class="radio-wrapper">
+                <label class="radio-option">
+                    <input type="radio" name="type" value="vehicle" checked>
+                    <span class="custom-radio"></span>
+                    Vehicle Number
+                </label>
+
+                <label class="radio-option">
+                    <input type="radio" name="type" value="challan">
+                    <span class="custom-radio"></span>
+                    E-Challan Number
+                </label>
+            </div>
+
+            <input type="text" name="q" placeholder="Enter Vehicle Number or Challan Number" required>
+            <br>
+            <button type="submit">🔍 Verify</button>
+        </form>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results">
+        {% if query %}
+            <h3>Search Results for “{{ query }}”</h3>
+        {% endif %}
+
+        {% for c in challans %}
+            <div class="challan">
+                <h3>Challan #{{ c.echallan_number }}</h3>
+                <p><b>Vehicle Number:</b> {{ c.violation.vehicle_number }}</p>
+                <p><b>Fine Amount:</b> ₹{{ c.fine_amount }}</p>
+                <p><b>Location:</b> {{ c.violation.location }}</p>
+                <p><b>Date & Time:</b> {{ c.issued_at }}</p>
+
+                {% if c.violation.latitude and c.violation.longitude %}
+                    <iframe src="https://www.google.com/maps?q={{ c.violation.latitude }},{{ c.violation.longitude }}&output=embed"></iframe>
+                {% endif %}
+
+                {% if c.violation.image %}
+                    <img src="{{ c.violation.image.url }}">
+                {% endif %}
+                {% if c.violation.plate_image %}
+                    <img src="{{ c.violation.plate_image.url }}">
+                {% endif %}
+            </div>
+        {% empty %}
+            {% if query %}
+                <p class="empty">No challans found.</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- USER GUIDE -->
+<section id="user-guide" class="guide-section">
+    <h2 class="guide-title">📘 How to Use the E-Challan System</h2>
+
+    <div class="guide-grid">
+        <div class="guide-card"><div class="icon">🌐</div>Visit Official Website</div>
+        <div class="guide-card"><div class="icon">⌨️</div>Enter Vehicle / Challan</div>
+        <div class="guide-card"><div class="icon">👁️</div>Confirm Violation</div>
+        <div class="guide-card"><div class="icon">📷</div>Review AI Evidence</div>
+        <div class="guide-card"><div class="icon">🔒</div>Secure Payment</div>
+        <div class="guide-card"><div class="icon">📧</div>Check Email</div>
+    </div>
+</section>
 
 </body>
 </html>
