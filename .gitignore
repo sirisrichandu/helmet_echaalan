@@ -1,0 +1,78 @@
+# =========================
+# PYTHON
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# =========================
+# DJANGO
+# =========================
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# =========================
+# VIRTUAL ENVIRONMENT
+# =========================
+venv/
+.env/
+.env.local
+.env.production
+
+# =========================
+# IDE / EDITORS
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# YOLO / ML MODELS
+# =========================
+*.pt
+runs/
+detection/yolo/
+
+# =========================
+# OPENCV / TEMP FILES
+# =========================
+*.jpg
+*.png
+*.mp4
+*.avi
+
+# =========================
+# PDF / GENERATED FILES
+# =========================
+*.pdf
+
+# =========================
+# GUNICORN / SERVER
+# =========================
+gunicorn.pid
+
+# =========================
+# NODE (if ever used)
+# =========================
+node_modules/
+
+# =========================
+# MIGRATION CACHE (SAFE)
+# =========================
+**/migrations/__pycache__/
