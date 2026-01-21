@@ -85,7 +85,7 @@ def handle_image(request, image_file):
             os.makedirs(plate_dir, exist_ok=True)
 
             plate_path = os.path.join(plate_dir, f"{violation.id}.jpg")
-            cv2.imwrite(plate_path, best["img"])
+         
 
             violation.plate_image = f"plates/{violation.id}.jpg"
             plate_image_url = violation.plate_image.url
