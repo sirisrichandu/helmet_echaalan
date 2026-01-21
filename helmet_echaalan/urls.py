@@ -18,13 +18,18 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 
+def home(request):
+    return HttpResponse("Helmet E-Challan System is Live")
 urlpatterns = [
     # ❌ Do NOT expose detection / webcam
     # ❌ Do NOT expose admin to public (optional)
 
     # ✅ Public challan system
     path('', include('challan.urls')),
+    path('', home),                 # ✅ FIX
+    path('challan/', include('challan.urls')),
 ]
 
 # Serve media only in development
