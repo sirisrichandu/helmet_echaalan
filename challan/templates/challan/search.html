@@ -35,7 +35,7 @@
 <div class="box">
     <h2>🔍 Search e-Challan</h2>
 
-    <form method="get">
+    <form method="get" action="{% url 'search_challan' %}">
         <input type="text" name="q" placeholder="e-Challan No or Vehicle No" required>
         <button type="submit">Search</button>
     </form>
@@ -300,7 +300,7 @@
 <div class="navbar">
     <h2>🚦 Traffic E-Challan System</h2>
     <div>
-        <a href="#top">Home</a>
+        <a href="{% url 'search_challan' %}">Home</a>
         <a href="#user-guide">User Guide</a>
         <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
