@@ -6,11 +6,11 @@ from django.http import HttpResponse
 
 
 
+
+
 urlpatterns = [
-    # Public challan search as homepage
     path('', include('challan.urls')),
 ]
-
 # Serve media only in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
