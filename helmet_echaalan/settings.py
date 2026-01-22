@@ -76,7 +76,7 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv(
             "DATABASE_URL",
-            "postgresql://helmet_echallan_db_user:nKiKdSMezOKmGnMAnuJIfPGkHtStMdGW@dpg-d5lqs2umcj7s73bkm0ng-a/helmet_echallan_db"
+            "postgresql://helmet_echallan_db_user:nKiKdSMezOKmGnMAnuJIfPGkHtStMdGW@dpg-d5lqs2umcj7s73bkm0ng-a.oregon-postgres.render.com/helmet_echallan_db"
             
         )
     )
