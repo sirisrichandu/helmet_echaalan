@@ -1,23 +1,23 @@
 from django.shortcuts import render
 from .models import Challan
+from django.db.models import Q
 
 def search_challan(request):
-    query = request.GET.get("q")   # GET, not POST
-    search_type = request.GET.get("type")
-
+    query = request.GET.get("q")
     challans = []
+    error = None
 
     if query:
-        if search_type == "vehicle":
-            challans = Challan.objects.select_related("violation").filter(
-                violation__vehicle_number__iexact=query.strip()
-            )
-        else:
-            challans = Challan.objects.select_related("violation").filter(
-                echallan_number=query.strip()
-            )
+        challans = Challan.objects.select_related("violation").filter(
+            Q(echallan_number__iexact=query) |
+            Q(violation__vehicle_number__iexact=query)
+        )
+
+        if not challans.exists():
+            error = "No challan found for this number"
 
     return render(request, "challan/search.html", {
-        "challans": challans,
         "query": query,
+        "challans": challans,
+        "error": error
     })
