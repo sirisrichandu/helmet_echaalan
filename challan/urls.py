@@ -1,6 +1,10 @@
 from django.urls import path
-from .views import search_challan
+from .views import search_challan, api_search_challan
 
 urlpatterns = [
-    path('', search_challan, name='search_challan'),
+    # Web page (HTML)
+    path('search/', search_challan, name='search_challan'),
+
+    # API (JSON)
+    path('api/search/', api_search_challan, name='api_search_challan'),
 ]
