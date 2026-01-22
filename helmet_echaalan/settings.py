@@ -12,13 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --------------------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True   # ✅ LOCAL ADMIN ALWAYS TRUE
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    ".onrender.com",
-]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # --------------------------------------------------
 # APPLICATIONS
@@ -49,7 +45,9 @@ AUTH_USER_MODEL = "accounts.User"
 # --------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    # ❌ DO NOT USE whitenoise locally
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -63,7 +61,6 @@ MIDDLEWARE = [
 # URLS / WSGI
 # --------------------------------------------------
 ROOT_URLCONF = "helmet_echaalan.urls"
-
 WSGI_APPLICATION = "helmet_echaalan.wsgi.application"
 
 # --------------------------------------------------
@@ -85,11 +82,13 @@ TEMPLATES = [
 ]
 
 # --------------------------------------------------
-# DATABASE (CRITICAL FIX)
+# DATABASE (USE RENDER DB FOR BOTH ADMIN + PUBLIC)
 # --------------------------------------------------
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL")
+    "default": dj_database_url.parse(
+        "postgresql://helmet_db_bvfu_user:GAcsRKi2MiUlmj8BKu7RR7kTsPKIfHQ1@dpg-d5ou1c4oud1c739ggihg-a.oregon-postgres.render.com/helmet_db_bvfu",
+        conn_max_age=600,
+        ssl_require=True,
     )
 }
 
@@ -112,11 +111,16 @@ USE_I18N = True
 USE_TZ = True
 
 # --------------------------------------------------
-# STATIC FILES
+# STATIC FILES (IMPORTANT FOR ADMIN UI)
 # --------------------------------------------------
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# ❌ REMOVE whitenoise storage locally
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # --------------------------------------------------
 # MEDIA (CLOUDINARY)
