@@ -125,7 +125,8 @@ import cv2
 from django.shortcuts import render
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.http import StreamingHttpResponse
+
+from django.views.decorators.csrf import csrf_protect
 
 from .models import Violation
 from .utils import (
@@ -146,6 +147,7 @@ DEFAULT_LOCATION = {
 # =======================
 # IMAGE UPLOAD
 # =======================
+@csrf_protect
 def upload_image(request):
     if request.method == "POST":
         image = request.FILES.get("media")
@@ -240,33 +242,37 @@ def upload_image(request):
 def video_feed():
     cap = cv2.VideoCapture(0)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        nohelmets = detect_nohelmet_boxes(frame)
+            nohelmets = detect_nohelmet_boxes(frame)
 
-        for (x1, y1, x2, y2) in nohelmets:
-            cv2.putText(
-                frame,
-                "NO HELMET",
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 0, 255),
-                2
+            for (x1, y1, x2, y2) in nohelmets:
+                cv2.putText(
+                    frame,
+                    "NO HELMET",
+                    (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 0, 255),
+                    2
+                )
+
+            _, buffer = cv2.imencode(".jpg", frame)
+            frame_bytes = buffer.tobytes()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" +
+                frame_bytes +
+                b"\r\n"
             )
 
-        _, buffer = cv2.imencode(".jpg", frame)
-        yield (
-            b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n"
-            + buffer.tobytes()
-            + b"\r\n"
-        )
-
-
+    finally:
+        cap.release()
 def webcam_feed(request):
     return StreamingHttpResponse(
         video_feed(),

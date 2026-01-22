@@ -118,6 +118,8 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR/ "media"
 
 # ❌ REMOVE whitenoise storage locally
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
