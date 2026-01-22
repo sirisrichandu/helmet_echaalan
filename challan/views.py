@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from .models import Challan
+from django.db.models import Q
 
 def search_challan(request):
     query = request.GET.get("q")
@@ -14,7 +15,7 @@ def search_challan(request):
             )
         else:
             challans = Challan.objects.select_related("violation").filter(
-                echallan_number__iexact=query
+                echallan_number=query
             )
 
     return render(request, "challan/search.html", {
