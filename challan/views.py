@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Challan
-
 
 def api_search_challan(request):
     query = request.GET.get('q')
@@ -14,8 +12,6 @@ def api_search_challan(request):
 
     challans = Challan.objects.filter(
         echallan_number=query
-    ) | Challan.objects.filter(
-        violation__vehicle_number=query
     )
 
     data = []
